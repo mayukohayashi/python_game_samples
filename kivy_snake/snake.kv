@@ -1,2 +1,13 @@
 <Sprite>
   bgcolor: 1, 1, 1, 1
+  size_hint: None, None
+  size: [app.sprite_size] * 2
+  pos: [x * app.sprite_size for x in self.coordinate]
+  canvas:
+    Color
+      rgba: self.bgcolor
+    Rectangle
+      pos: self.pos
+      size: self.size
+
+RelativeLayout
