@@ -62,7 +62,14 @@ class Snake(App):
 
   def move(self, *args):
     new_head = [sum(x) for x in zip(self.head, direction_values[self.direction])]
+    if not self.check_in_bounds(new_head):
+      return  self.die()
+
     self.head = new_head
+
+  ## 端にあたったら死ぬ
+  def check_in_bounds(self, pos):
+    return all(0 <= pos[x] < dim for x, dim in enumerate([WIDTH, HEIGHT]))
 
 
 if __name__ == '__main__':
