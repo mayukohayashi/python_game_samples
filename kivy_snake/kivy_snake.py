@@ -55,6 +55,11 @@ class Snake(App):
 
   def on_start(self):
     Clock.schedule_interval(self.move, MOVESPEED)
+    Window.bind(on_keyboard = self.key_handler)
+
+  ### キーボードの値をとる
+  def key_handler(self, *args):
+    print(args)
 
   def on_head(self, *args):
     self.snake = self.snake[-self.length:] + [self.head]
