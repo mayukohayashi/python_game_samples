@@ -51,6 +51,9 @@ class Sprite(Widget):
 
 SPRITES = defaultdict(lambda: Sprite())
 
+class Food(Sprite):
+  pass
+
 ## Snake
 class Snake(App):
   sprite_size = kp.NumericProperty(SPRITE_SIZE)
@@ -61,15 +64,28 @@ class Snake(App):
 
   ### snakeがたべる餌
   food = kp.ListProperty([0, 0])
+  food_sprite = kp.ObjectProperty(Food)
 
   direction = kp.StringProperty(RIGHT, options = (UP, DOWN, RIGHT, LEFT))
+  buffer_direction = kp.StringProperty(RIGHT, options=(UP, DOWN, RIGHT, LEFT, ''))
+  block_input = kp.BooleanProperty(False)
 
   ###　死んだ時の挙動用（snake.kv）
   alpha = kp.NumericProperty(0)
 
   def on_start(self):
+    self.food_sprite = Food()
+    self.food = self.new_food_location
+    self.head = self.new_head_location
     Clock.schedule_interval(self.move, MOVESPEED)
     Window.bind(on_keyboard = self.key_handler)
+
+  ## いつも違う場所に餌を出す
+  def on_food(self, *args):
+    self.food_sprite.coordinate = self.food
+    if not self.food_sprite.parent:
+      self.root.add_widget(self.food_sprite)
+
 
   ### キーコードをとる
   def key_handler(self, _, __, ___, key, *____):
@@ -82,7 +98,11 @@ class Snake(App):
 
   def try_change_direction(self, new_direction):
     if direction_group[new_direction] != direction_group[self.direction]:
-      self.direction = new_direction
+      if self.block_input:
+        self.buffer_direction = new_direction
+      else:
+        self.direction = new_direction
+        self.block_input = True
 
   def on_head(self, *args):
     self.snake = self.snake[-self.length:] + [self.head]
@@ -98,10 +118,26 @@ class Snake(App):
   def new_head_location(self):
     return [randint(2, dim - 2) for dim in [WIDTH, HEIGHT]]
 
+  @property
+  def new_food_location(self):
+    while True:
+      food = [randint(0, dim) for dim in [WIDTH, HEIGHT]]
+      if food not in self.snake and food != self.food:
+        return food
+
   def move(self, *args):
+    self.block_input =False
     new_head = [sum(x) for x in zip(self.head, direction_values[self.direction])]
-    if not self.check_in_bounds(new_head):
-      return  self.die()
+    if not self.check_in_bounds(new_head) or new_head in self.snake:
+      return self.die()
+
+    ### 蛇が餌をたべたとき
+    if new_head == self.food:
+      self.length += 1
+      self.food = self.new_food_location
+    if self.buffer_direction:
+      self.try_change_direction(self.buffer_direction)
+      self.buffer_direction = ''
 
     self.head = new_head
 
@@ -110,10 +146,14 @@ class Snake(App):
     return all(0 <= pos[x] < dim for x, dim in enumerate([WIDTH, HEIGHT]))
 
   def die(self):
+    self.root.clear_widgets() ### 最初にクリア
+
     self.alpha = ALPHA
     Animation(alpha = 0, duration = MOVESPEED).start(self)
     self.snake.clear()
-    self.root.clear_widgets()
+    self.length = LENGTH ### 死んだらもとの大きさ
+
+    self.food = self.new_food_location
     self.head = self.new_head_location
 
 
