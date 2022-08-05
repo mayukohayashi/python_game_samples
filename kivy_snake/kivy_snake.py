@@ -1,3 +1,4 @@
+from hashlib import new
 from kivy.metrics import sp
 from kivy.app import App
 from kivy.core.window import Window
@@ -24,11 +25,24 @@ DOWN = 'down'
 RIGHT = 'right'
 LEFT = 'left'
 
+## 方向軸どこに行くか指示
 direction_values = {UP: [0, 1],
                     DOWN: [0, -1],
                     RIGHT: [1, 0],
                     LEFT: [-1, 0]
                     }
+
+## 横軸なのか縦軸なのか
+direction_group = {UP: 'vertical',
+                   DOWN: 'vertical',
+                   RIGHT: 'horizontal',
+                   LEFT: 'horizontal'}
+
+## 方向対応キー
+direction_keys = {'w': UP,
+                  's': DOWN,
+                  'd': RIGHT,
+                  'a': LEFT}
 
 ## Sprite(画面)構築
 class Sprite(Widget):
@@ -57,9 +71,18 @@ class Snake(App):
     Clock.schedule_interval(self.move, MOVESPEED)
     Window.bind(on_keyboard = self.key_handler)
 
-  ### キーボードの値をとる
-  def key_handler(self, *args):
-    print(args)
+  ### キーコードをとる
+  def key_handler(self, _, __, ___, key, *____):
+    try:
+      self.try_change_direction(direction_keys[key])
+
+      ## keyプリントして確認　： print(direction_keys[key])
+    except KeyError:
+      pass
+
+  def try_change_direction(self, new_direction):
+    if direction_group[new_direction] != direction_group[self.direction]:
+      self.direction = new_direction
 
   def on_head(self, *args):
     self.snake = self.snake[-self.length:] + [self.head]
